@@ -5,8 +5,12 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "author": "Kyle Constance",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@testing-library/dom": "^7.2.2",
+    "jest": "^25.4.0"
+  }
 }
