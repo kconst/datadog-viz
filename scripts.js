@@ -2,7 +2,7 @@ const RETRIEVAL_INTERVAL = 10000;
 
 var lineArr = [];
 var MAX_LENGTH = 60;
-var duration = 500;
+var duration = 10000;
 var chart = realTimeLineChart();
 
 function randomNumberBounds(min, max) {
@@ -12,31 +12,26 @@ function randomNumberBounds(min, max) {
 function seedData() {
   var now = new Date();
   for (var i = 0; i < MAX_LENGTH; ++i) {
-      debugger;
     lineArr.push({
       time: new Date(now.getTime() - ((MAX_LENGTH - i) * duration)),
-      x: randomNumberBounds(0, 5)/*,
-      y: randomNumberBounds(0, 2.5),
-      z: randomNumberBounds(0, 10)*/
+      x: randomNumberBounds(0, 100)
     });
   }
 }
 
 function updateData() {
-  var now = new Date();
+    lineArr.push({
+        time: new Date(),
+        x: randomNumberBounds(0, 100)
+    });
 
-  var lineData = {
-    time: now,
-    x: randomNumberBounds(0, 100)/*,
-    y: randomNumberBounds(0, 2.5),
-    z: randomNumberBounds(0, 10)*/
-  };
-  lineArr.push(lineData);
+    // remove data points from queue since we only want the last 10 minutes worth of info
+    if (lineArr.length > 60) {
+        lineArr.shift();
+    }
 
-  if (lineArr.length > 60) {
-    lineArr.shift();
-  }
-  d3.select("#chart").datum(lineArr).call(chart);
+    // update with the new data point
+    d3.select("#chart").datum(lineArr).call(chart);
 }
 
 function resize() {
@@ -49,15 +44,15 @@ function resize() {
 
 document.addEventListener("DOMContentLoaded", function() {
     seedData();
-    window.setInterval(updateData, 500);
+    window.setInterval(updateData, 10000);
     d3.select("#chart").datum(lineArr).call(chart);
     d3.select(window).on('resize', resize);
-    setInterval(() => {
-        retrieveData()
-        .catch((err) => {
-            console.warn(err);
-        });
-    }, RETRIEVAL_INTERVAL);
+    // setInterval(() => {
+    //     retrieveData()
+    //     .catch((err) => {
+    //         console.warn(err);
+    //     });
+    // }, RETRIEVAL_INTERVAL);
 });
 
 
