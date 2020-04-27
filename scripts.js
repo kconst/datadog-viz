@@ -38,6 +38,8 @@ function updateData() {
 
     // update with the new data point
     d3.select("#chart").datum(lineArr).call(chart);
+    const alertLog = document.querySelector('#alertLog');
+    alertLog.innerHTML = '';
 }
 
 function setHighUsageDuration() {
@@ -49,39 +51,71 @@ function setHighUsageUpperBound() {
 }
 
 function checkAlerts(records) {
-    const upperBound = 90//getUpperBound();
-    const durationLimit = 20*1000//getDurationLimit();
+    const upperBound = 50//getUpperBound();
+    // const durationLimit = 120000//getDurationLimit();
+    const durationLimit = 30000//getDurationLimit();
 
-    let isHighUsage = false;
-    let i = records.length - 1;
+    // let incidents;
+    let recordedAlerts = new Set();
+    let startInterval;
+    let endInterval;
     let activeDuration = 0;
 
-    isHighUsage = records.some(record => {
-        const value = record.x * 1000;
+    // record the high load ranges
+    const incidents = records.reduce((acc, record, index) => {
+        const value = (record.x * 100).toFixed(2) * 1;
+        let latestRange = acc[acc.length - 1];
 
         if (value >= upperBound) {
+            latestRange = latestRange || [record.time];
+            latestRange[1] = latestRange[1] || record.time;
+
+            if (latestRange[1] < record.time) {
+                latestRange[1] = record.time;
+            }
+
             activeDuration += RETRIEVAL_INTERVAL;
-        } else {
-            activeDuration = 0;
+
+            if (!acc[0]) {
+                acc[0] = latestRange;
+            }
+            if (acc[acc.length - 1] === undefined) {
+                acc[acc.length - 1] = latestRange;
+            }
         }
 
-        // if we go over the limit
-        if (activeDuration >= durationLimit) {
-            return true;
+
+        if (value < upperBound) {
+            if (activeDuration >= durationLimit) {
+                activeDuration = 0;
+                acc.push(record.time);
+                acc.push(undefined);
+            }
         }
-    });
 
-    if (isHighUsage) {
-        const alertLog = document.querySelector('#alertLog');
+        return acc;
+    }, []);
 
+
+    const alertLog = document.querySelector('#alertLog');
+    alertLog.innerHTML = '';
+
+    incidents.forEach(incident => {
         const alertElement = document.createElement('option');
 
-        
+        if (incident instanceof Array) {
+            alertElement.classList.add('highUsage');
+            alertElement.setAttribute('value', incident[0]);
+            alertElement.textContent = `High Load from ${ incident[0].toLocaleString() } to ${ incident[1].toLocaleString() }`;
+        } else if (incident) {
+            alertElement.classList.add('recovered');
+            alertElement.setAttribute('value', incident);
+            alertElement.textContent = `Recovered from incident at ${ incident.toLocaleString() }`;
+        }
 
-        alertLog.appendChild()
-    }
-
-    // debugger;
+        alertLog.appendChild(alertElement);
+        alertElement.scrollIntoView();
+    });
 }
 
 function resize() {
@@ -95,15 +129,35 @@ function resize() {
 document.addEventListener("DOMContentLoaded", function() {
     seedData();
     // updateData()
-    window.setInterval(updateData, 10000);
+    // window.setInterval(updateData, 10000);
     d3.select("#chart").datum(lineArr).call(chart);
     d3.select(window).on('resize', resize);
-    // setInterval(() => {
-    //     retrieveData()
-    //     .catch((err) => {
-    //         console.warn(err);
-    //     });
-    // }, RETRIEVAL_INTERVAL);
+    setInterval(() => {
+        retrieveData()
+            .then(data => {
+                console.log({
+                    time: new Date(),
+                    x: data.loadAverage
+                });
+                lineArr.push({
+                    time: new Date(),
+                    x: data.loadAverage
+                });
+
+                if (lineArr.length > 60) {
+                    lineArr.shift();
+                }
+
+                // detection logic
+                checkAlerts(lineArr);
+
+                // update with the new data point
+                d3.select("#chart").datum(lineArr).call(chart);
+            })
+        .catch((err) => {
+            console.warn(err);
+        });
+    }, RETRIEVAL_INTERVAL);
 });
 
 
@@ -112,9 +166,6 @@ function retrieveData() {
     return fetch('http://localhost:8000')
         .then((response) => {
             return response.json();
-        })
-        .then((data) => {
-            console.log(data);
         });
 }
 

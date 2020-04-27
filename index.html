@@ -8,12 +8,59 @@
     <meta name="description" content="CPU Load Monitor">
     <meta name="author" content="Kyle Constance">
 
-    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+        .highUsage {
+            background-color: #f59797;
+        }
+        .recovered {
+            background-color: #aeffb1;
+        }
+
+        .subSection {
+            display: flex;
+            justify-content: space-evenly;
+        }
+
+        .title {
+            font-weight: bold;
+            font-size: 12px;
+            display: block;
+        }
+
+        .inputFields {
+            width: 250px;
+        }
+
+        .inputFields input {
+            display: block;
+            width: 10%;
+        }
+
+        .inputFields label {
+            font-size: 10px;
+        }
+    </style>
 </head>
 
 <body>
+    <h1>CPU Load Monitor</h1>
     <div id="chart"></div>
-    <select id="alertLog" multiple></select>
+
+    <section class="subSection">
+        <div>
+            <span class="title">Incident Log</span>
+            <select id="alertLog" multiple></select>
+        </div>
+        <div class="inputFields">
+            <label>High Load Alert Duration (in minutes)</label>
+            <input type="text" value="2">
+            <label>High Load Limit (percentage)</label>
+            <input type="text" value="50">
+        </div>
+    </section>
     <script src="https://d3js.org/d3.v4.js"></script>
     <script src="scripts.js"></script>
 </body>
