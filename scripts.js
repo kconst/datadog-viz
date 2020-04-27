@@ -2,7 +2,7 @@
     const RETRIEVAL_INTERVAL = 10000;
     const MAX_LENGTH = 60;
 
-    const lineArr = [];
+    const lineQueue = new Queue(MAX_LENGTH);
     const chart = realTimeLineChart();
     let alertingModule;
 
@@ -11,7 +11,7 @@
 
     document.addEventListener("DOMContentLoaded", function() {
         seedData();
-        d3.select("#chart").datum(lineArr).call(chart);
+        d3.select("#chart").datum(lineQueue.items).call(chart);
         d3.select(window).on('resize', resize);
         setInterval(() => {
             retrieveData()
@@ -20,24 +20,22 @@
                         time: new Date(),
                         value: data.loadAverage
                     });
-                    lineArr.push({
+
+                    lineQueue.enqueue({
                         time: new Date(),
                         value: data.loadAverage
                     });
 
-                    if (lineArr.length > MAX_LENGTH) {
-                        lineArr.shift();
-                    }
-
-                    alertingModule.incidents = lineArr;
+                    alertingModule.incidents = lineQueue.items;
 
                     // update DOM with latest alerts
                     const alertLog = document.querySelector('#alertLog');
                     alertLog.innerHTML = '';
                     alertLog.appendChild(alertingModule.generateHTML(alertingModule.incidents));
+                    alertLog.lastElementChild.scrollIntoView();
 
                     // update with the new data point
-                    d3.select("#chart").datum(lineArr).call(chart);
+                    d3.select("#chart").datum(lineQueue.items).call(chart);
                 })
                 .catch((err) => {
                     console.warn(err);
@@ -58,7 +56,7 @@
     function seedData() {
         let now = new Date();
         for (let i = 0; i < MAX_LENGTH; ++i) {
-            lineArr.push({
+            lineQueue.enqueue({
                 time: new Date(now.getTime() - ((MAX_LENGTH - i) * RETRIEVAL_INTERVAL)),
                 value: 0
             });
@@ -68,7 +66,7 @@
             upperBound: limitInput.value,
             durationLimit: durationInput.value,
             retrievalInterval: RETRIEVAL_INTERVAL,
-            incidents: lineArr
+            incidents: lineQueue.items
         });
     }
 

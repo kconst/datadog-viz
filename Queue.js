@@ -1,9 +1,14 @@
-export default class Queue {
-    constructor() {
+class Queue {
+    constructor(limit) {
         this.items = [];
+        this.limit = limit;
     }
     enqueue(element) {
         this.items.push(element);
+
+        if (this.items.length > this.limit) {
+            this.dequeue();
+        }
     }
 
     dequeue() {
