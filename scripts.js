@@ -14,7 +14,7 @@ function seedData() {
   for (var i = 0; i < MAX_LENGTH; ++i) {
     lineArr.push({
       time: new Date(now.getTime() - ((MAX_LENGTH - i) * duration)),
-      x: randomNumberBounds(0, 100)
+      x: randomNumberBounds(0, 0)
     });
   }
 }
@@ -30,8 +30,58 @@ function updateData() {
         lineArr.shift();
     }
 
+    // detection logic
+    checkAlerts(lineArr);
+    // if () {
+    //     triggerAlert('high cpu load');
+    // }
+
     // update with the new data point
     d3.select("#chart").datum(lineArr).call(chart);
+}
+
+function setHighUsageDuration() {
+
+}
+
+function setHighUsageUpperBound() {
+
+}
+
+function checkAlerts(records) {
+    const upperBound = 90//getUpperBound();
+    const durationLimit = 20*1000//getDurationLimit();
+
+    let isHighUsage = false;
+    let i = records.length - 1;
+    let activeDuration = 0;
+
+    isHighUsage = records.some(record => {
+        const value = record.x * 1000;
+
+        if (value >= upperBound) {
+            activeDuration += RETRIEVAL_INTERVAL;
+        } else {
+            activeDuration = 0;
+        }
+
+        // if we go over the limit
+        if (activeDuration >= durationLimit) {
+            return true;
+        }
+    });
+
+    if (isHighUsage) {
+        const alertLog = document.querySelector('#alertLog');
+
+        const alertElement = document.createElement('option');
+
+        
+
+        alertLog.appendChild()
+    }
+
+    // debugger;
 }
 
 function resize() {
@@ -44,6 +94,7 @@ function resize() {
 
 document.addEventListener("DOMContentLoaded", function() {
     seedData();
+    // updateData()
     window.setInterval(updateData, 10000);
     d3.select("#chart").datum(lineArr).call(chart);
     d3.select(window).on('resize', resize);
@@ -109,6 +160,7 @@ function realTimeLineChart() {
           .y(function(d) { return y(d.value); });
   
         var svg = d3.select(this).selectAll("svg").data([data]);
+        
         var gEnter = svg.enter().append("svg").append("g");
         gEnter.append("g").attr("class", "axis x");
         gEnter.append("g").attr("class", "axis y");
@@ -158,6 +210,10 @@ function realTimeLineChart() {
           .attr("width", width-margin.left-margin.right)
           .attr("height", height-margin.top-margin.right);
   
+          var gradientColor = (p) => {
+            return d3.interpolateHslLong("red", "blue")((p[0].value-bounds[0])/interval);
+          };
+
         g.selectAll("g path.data")
           .data(data)
           .style("stroke", function(d) { return z(d.label); })
@@ -178,6 +234,7 @@ function realTimeLineChart() {
         function tick() {
           d3.select(this)
             .attr("d", function(d) { return line(d.values); })
+            .attr("stroke", () => 'red')
             .attr("transform", null);
   
           var xMinLess = new Date(new Date(xMin).getTime() - duration);
