@@ -32,7 +32,10 @@
                     const alertLog = document.querySelector('#alertLog');
                     alertLog.innerHTML = '';
                     alertLog.appendChild(alertingModule.generateHTML(alertingModule.incidents));
-                    alertLog.lastElementChild.scrollIntoView();
+
+                    if (alertLog.lastElementChild) {
+                        alertLog.lastElementChild.scrollIntoView();
+                    }
 
                     // update with the new data point
                     d3.select("#chart").datum(lineQueue.items).call(chart);
