@@ -1,7 +1,7 @@
 const AlertingModule = class AlertingModule {
     constructor({ upperBound = 80, durationLimit = 2, incidents = [], retrievalInterval = 10000 }) {
-        this.upperBound = upperBound;
-        this.durationLimit = durationLimit;
+        this.upperBound = parseFloat(upperBound, 10);
+        this.durationLimit = parseFloat(durationLimit, 10);
         this.retrievalInterval = retrievalInterval;
         this.incidents = incidents;
     }

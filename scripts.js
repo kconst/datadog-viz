@@ -6,6 +6,9 @@
     const chart = realTimeLineChart();
     let alertingModule;
 
+    const durationInput = document.querySelector('.duration');
+    const limitInput = document.querySelector('.limit');
+
     document.addEventListener("DOMContentLoaded", function() {
         seedData();
         d3.select("#chart").datum(lineArr).call(chart);
@@ -40,6 +43,16 @@
                     console.warn(err);
                 });
         }, RETRIEVAL_INTERVAL);
+
+        durationInput.addEventListener('change', e => {
+            alertingModule.durationLimit = e.currentTarget.value;
+            console.log(`duration limit set to: ${alertingModule.durationLimit}`);
+        });
+
+        limitInput.addEventListener('change', e => {
+            alertingModule.upperBound = e.currentTarget.value;
+            console.log(`cpu limit set to: ${alertingModule.upperBound}`);
+        });
     });
 
     function seedData() {
@@ -52,8 +65,8 @@
         }
 
         alertingModule = new AlertingModule({
-            upperBound: 50,
-            durationLimit: 0.5,
+            upperBound: limitInput.value,
+            durationLimit: durationInput.value,
             retrievalInterval: RETRIEVAL_INTERVAL,
             incidents: lineArr
         });
