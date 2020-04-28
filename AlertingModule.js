@@ -19,53 +19,88 @@
             const upperBound = this.upperBound;
             const durationLimit = this.durationLimit * 60000;
 
+            let type = 'alert';
             let activeDuration = 0;
 
             // record the high load ranges
             this._incidents = records.reduce((acc, record, index) => {
-                const value = (record.value * 100).toFixed(2) * 1;
                 let latestRange = acc[acc.length - 1];
+                const value = (record.value * 100).toFixed(2) * 1;
 
-                // greedily update data as we come across valid cases
-                if (value >= upperBound) {
-                    latestRange = latestRange || [record.time];
-                    latestRange[1] = latestRange[1] || record.time;
+                if (value >= upperBound && type === 'alert') {
+                    latestRange = latestRange || {
+                        startTime: record.time,
+                        endTime: record.time,
+                        type
+                    };
 
-                    if (latestRange[1] < record.time) {
-                        latestRange[1] = record.time;
+                    if (latestRange.endTime < record.time) {
+                        latestRange.endTime = record.time;
                     }
 
                     activeDuration += this.retrievalInterval;
+                }
 
-                    // ensure properties get initialized
-                    if (!acc[0]) {
-                        acc[0] = latestRange;
-                    }
-                    if (acc[acc.length - 1] === undefined) {
-                        acc[acc.length - 1] = latestRange;
+
+                if (value < upperBound && type === 'alert') {
+                    if (activeDuration >= durationLimit) {
+                        // push a recovery and reset counter w/ offset
+                        activeDuration = 50;
+                        type = 'recovery';
+                        acc.push(undefined);
+
+
+                        verifyLastResult();
+                        return acc;
                     }
                 }
 
 
-                if (value < upperBound) {
+                if (value < upperBound && type === 'recovery') {
                     if (activeDuration >= durationLimit) {
                         // push a recovery and reset counter
-                        activeDuration = 0;
-                        acc.push(record.time);
+                        activeDuration = 50;
+                        type = 'alert';
                         acc.push(undefined);
+
+                        verifyLastResult();
+                        return acc;
                     }
+
+                    latestRange = latestRange || {
+                        startTime: records[index - 1] ? records[index - 1].time : record.time,
+                        endTime: record.time,
+                        type
+                    };
+
+                    if (latestRange.endTime < record.time) {
+                        latestRange.endTime = record.time;
+                    }
+
+                    activeDuration += this.retrievalInterval;
                 }
 
-                // ensure last open loop is valid
-                if (index === records.length - 1) {
-                    latestRange = acc[acc.length - 1];
-
-                    if (latestRange === undefined || latestRange[1] - latestRange[0] < durationLimit) {
-                        acc.splice(acc.length - 1, 1);
-                    }
+                // ensure properties get initialized
+                if (!acc[0]) {
+                    acc[0] = latestRange;
                 }
+                if (acc[acc.length - 1] === undefined) {
+                    acc[acc.length - 1] = latestRange;
+                }
+
+                verifyLastResult();
 
                 return acc;
+
+                function verifyLastResult() {
+                    if (index === records.length - 1) {
+                        latestRange = acc[acc.length - 1];
+
+                        if (latestRange === undefined || (latestRange.endTime - latestRange.startTime < durationLimit)) {
+                            acc.splice(acc.length - 1, 1);
+                        }
+                    }
+                }
             }, []);
         }
 
@@ -75,15 +110,19 @@
             incidents.forEach(incident => {
                 const alertElement = document.createElement('option');
 
-                if (incident instanceof Array) {
-                    alertElement.classList.add('highUsage');
-                    alertElement.setAttribute('value', incident[0]);
-                    alertElement.textContent = `High Load from ${ incident[0].toLocaleString() } to ${ incident[1].toLocaleString() }`;
-                } else if (incident) {
-                    alertElement.classList.add('recovered');
-                    alertElement.setAttribute('value', incident);
-                    alertElement.textContent = `Recovered from incident at ${ incident.toLocaleString() }`;
-                }
+                alertElement.classList.add(incident.type);
+                alertElement.setAttribute('value', incident.startTime);
+                alertElement.textContent = incident.type === 'recovery' ? `Recovered from ${ incident.startTime.toLocaleString() } to ${ incident.endTime.toLocaleString() }` : `High Load from ${ incident.startTime.toLocaleString() } to ${ incident.endTime.toLocaleString() }`;
+
+                // if (incident instanceof Array) {
+                //     alertElement.classList.add('highUsage');
+                //     alertElement.setAttribute('value', incident[0]);
+                //     alertElement.textContent = `High Load from ${ incident[0].toLocaleString() } to ${ incident[1].toLocaleString() }`;
+                // } else if (incident) {
+                //     alertElement.classList.add('recovered');
+                //     alertElement.setAttribute('value', incident);
+                //     alertElement.textContent = `Recovered from incident at ${ incident.toLocaleString() }`;
+                // }
 
                 alertLog.appendChild(alertElement);
             });
