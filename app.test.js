@@ -86,7 +86,7 @@ describe('alerting module', () => {
                 "value": 0.68328857421875
             }];
 
-        expect(alertingModule.incidents.filter(incident => incident instanceof Array).length).toBe(1);
+        expect(alertingModule.incidents.filter(incident => incident.type === 'alert').length).toBe(1);
     });
 
     it('should generate a recovery incident on cpu load recovery', () => {
@@ -111,11 +111,27 @@ describe('alerting module', () => {
                 "value": 0.68328857421875
             },
             {
-                "time": "2020-04-27T20:29:15.203Z",
-                "value": 0.49560546875
-            }];
+                "time": "2020-04-27T20:31:15.252Z",
+                "value": 0.4443359375
+            },
+            {
+                "time": "2020-04-27T20:31:25.200Z",
+                "value": 0.43365478515625
+            },
+            {
+                "time": "2020-04-27T20:31:35.203Z",
+                "value": 0.4154052734375
+            },
+            {
+                "time": "2020-04-27T20:31:45.201Z",
+                "value": 0.38909912109375
+            },
+            {
+                "time": "2020-04-27T20:31:55.201Z",
+                "value": 0.40692138671875
+            },];
 
-        expect(alertingModule.incidents.filter(incident => typeof incident === 'string').length).toBe(1);
+        expect(alertingModule.incidents.filter(incident => incident.type === 'recovery').length).toBe(1);
     });
 
     it('should generate html with valid incidents', () => {
@@ -140,9 +156,25 @@ describe('alerting module', () => {
                 "value": 0.68328857421875
             },
             {
-                "time": "2020-04-27T20:29:15.203Z",
-                "value": 0.49560546875
-            }];
+                "time": "2020-04-27T20:31:15.252Z",
+                "value": 0.4443359375
+            },
+            {
+                "time": "2020-04-27T20:31:25.200Z",
+                "value": 0.43365478515625
+            },
+            {
+                "time": "2020-04-27T20:31:35.203Z",
+                "value": 0.4154052734375
+            },
+            {
+                "time": "2020-04-27T20:31:45.201Z",
+                "value": 0.38909912109375
+            },
+            {
+                "time": "2020-04-27T20:31:55.201Z",
+                "value": 0.40692138671875
+            },];
 
         const fragment = alertingModule.generateHTML(alertingModule.incidents);
         expect(fragment.children.length).toBe(2);
